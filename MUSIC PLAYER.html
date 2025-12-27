@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Player UI</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #065dc1, #000428);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.player {
+  width: 350px;
+  background: rgba(30, 30, 30, 0.95);
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+  text-align: center;
+}
+
+.mini-cover {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: url('your-album-art.jpg') no-repeat center/cover;
+  border: 3px solid #065dc1;
+}
+
+.song-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.artist {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.controls button {
+  background: #292929;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.controls button:hover {
+  background: #065dc1;
+  transform: scale(1.2);
+}
+
+.progress-container {
+  width: 100%;
+  height: 5px;
+  background: #333;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.progress {
+  width: 0%;
+  height: 100%;
+  background: #065dc1;
+  transition: width 0.1s ease;
+}
+
+.time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.volume-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+.volume-btn {
+  background: #292929;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.volume-btn:hover {
+  background: #065dc1;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 140px;
+  height: 5px;
+  background: #333;
+  border-radius: 5px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #065dc1;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="player">
+  <!-- REMOVED BIG COVER IMAGE - ONLY SMALL PROFILE PICTURE LEFT -->
+  <div class="mini-cover"></div>
+  
+  <div class="song-title">Song Title</div>
+  <div class="artist">Artist Name</div>
+
+  <div class="controls">
+    <button id="prevBtn">⏮</button>
+    <button id="playPauseBtn">▶</button>
+    <button id="nextBtn">⏭</button>
+  </div>
+
+  <div class="progress-container">
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="time">
+    <span id="currentTime">0:00</span>
+    <span id="duration">0:00</span>
+  </div>
+
+  <div class="volume-container">
+    <button class="volume-btn" id="volumeBtn">🔊</button>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+  </div>
+
+  <audio id="audioPlayer" preload="metadata">
+    <source src="your-song.mp3" type="audio/mpeg">
+  </audio>
+</div>
+
+<script>
+const audio = document.getElementById('audioPlayer');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const progress = document.getElementById('progress');
+const currentTimeEl = document.getElementById('currentTime');
+const durationEl = document.getElementById('duration');
+const volumeSlider = document.getElementById('volumeSlider');
+const volumeBtn = document.getElementById('volumeBtn');
+
+let isPlaying = false;
+
+playPauseBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    audio.pause();
+    playPauseBtn.innerHTML = '▶';
+  } else {
+    audio.currentTime = 0;
+    audio.play();
+    playPauseBtn.innerHTML = '⏸';
+  }
+  isPlaying = !isPlaying;
+});
+
+audio.addEventListener('ended', () => {
+  audio.currentTime = 0;
+  progress.style.width = '0%';
+  currentTimeEl.textContent = '0:00';
+  playPauseBtn.innerHTML = '▶';
+  isPlaying = false;
+});
+
+audio.addEventListener('timeupdate', () => {
+  if (audio.duration) {
+    const progressPercent = (audio.currentTime / audio.duration) * 100;
+    progress.style.width = progressPercent + '%';
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+  }
+});
+
+audio.addEventListener('loadedmetadata', () => {
+  durationEl.textContent = formatTime(audio.duration);
+});
+
+progress.parentElement.addEventListener('click', (e) => {
+  const rect = progress.parentElement.getBoundingClientRect();
+  const pos = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pos * audio.duration;
+});
+
+volumeSlider.addEventListener('input', () => {
+  audio.volume = volumeSlider.value;
+  volumeBtn.textContent = audio.volume === 0 ? '🔇' : '🔊';
+});
+
+audio.addEventListener('play', () => {
+  isPlaying = true;
+  playPauseBtn.innerHTML = '⏸';
+});
+
+audio.addEventListener('pause', () => {
+  isPlaying = false;
+  playPauseBtn.innerHTML = '▶';
+});
+
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+volumeSlider.dispatchEvent(new Event('input'));
+</script>
+</body>
+</html>
